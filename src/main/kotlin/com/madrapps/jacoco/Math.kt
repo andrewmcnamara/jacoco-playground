@@ -29,6 +29,6 @@ class Arithmetic {
     }
 
     fun circumference(r: Int): Int {
-        return PI * r.pow(2)
+        return PI * r * r
     }
 }
