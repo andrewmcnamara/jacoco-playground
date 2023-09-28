@@ -28,7 +28,7 @@ class Arithmetic {
         return a * b
     }
 
-    fun circumference(r: Int): Int {
+    fun circumference(r: Int): Double {
         return PI * r * r
     }
 }
