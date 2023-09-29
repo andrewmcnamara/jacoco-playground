@@ -115,7 +115,9 @@ function action() {
                 core.info(`changedFiles: ${(0, util_1.debug)(changedFiles)}`);
             core.info('Getting changed files');
             const reportsJson = yield reportsJsonAsync;
+            core.info('Did we come back here');
             const reports = reportsJson.map(report => report['report']);
+            core.info('Getting project coverage');
             const project = (0, process_1.getProjectCoverage)(reports, changedFiles);
             if (debugMode)
                 core.info(`project: ${(0, util_1.debug)(project)}`);

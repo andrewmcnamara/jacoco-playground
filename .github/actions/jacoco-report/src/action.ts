@@ -89,8 +89,9 @@ export async function action(): Promise<void> {
     if (debugMode) core.info(`changedFiles: ${debug(changedFiles)}`)
     core.info('Getting changed files')
     const reportsJson = await reportsJsonAsync
+    core.info('Did we come back here')
     const reports = reportsJson.map(report => report['report'])
-
+    core.info('Getting project coverage')
     const project: Project = getProjectCoverage(reports, changedFiles)
     if (debugMode) core.info(`project: ${debug(project)}`)
 
