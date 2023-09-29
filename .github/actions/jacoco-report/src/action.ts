@@ -191,23 +191,29 @@ async function getChangedFiles(
   client: any,
   debugMode: boolean
 ): Promise<ChangedFile[]> {
-  const response = await client.rest.repos.compareCommits({
-    base,
-    head,
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
-  });
-
   const changedFiles: ChangedFile[] = [];
-  for (const file of response.data.files) {
-    if (debugMode) core.info(`file: ${debug(file)}`);
-    const changedFile: ChangedFile = {
-      filePath: file.filename,
-      url: file.blob_url,
-      lines: getChangedLines(file.patch),
-    };
-    changedFiles.push(changedFile);
+  
+  try {
+    const response = await client.rest.repos.compareCommits({
+      base,
+      head,
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+    });
+
+    for (const file of response.data.files) {
+      if (debugMode) core.info(`file: ${debug(file)}`);
+      const changedFile: ChangedFile = {
+        filePath: file.filename,
+        url: file.blob_url,
+        lines: getChangedLines(file.patch),
+      };
+      changedFiles.push(changedFile);
+    }
+  } catch (e) {
+    core.info(`Unable to compare commits between ${base} and ${head}: ${e}`);
   }
+
   return changedFiles;
 }
 

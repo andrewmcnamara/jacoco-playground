@@ -35,4 +35,8 @@ class Arithmetic {
     fun circumferenceNew(r: Int): Double {
         return PI * r * r
     }
+
+    fun circumferenceNewerStill(r: Int): Double {
+        return PI * r * r
+    }
 }
