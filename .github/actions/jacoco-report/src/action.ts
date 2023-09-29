@@ -116,7 +116,7 @@ export async function action(): Promise<void> {
     core.info("Getting changed files");
     const changedFiles = await getChangedFiles(base, head, client, debugMode);
     if (debugMode) core.info(`changedFiles: ${debug(changedFiles)}`);
-    core.info("Getting changed files");
+    core.info("Getting changed files DONE");
     const reportsJson = await reportsJsonAsync;
     core.info("Did we come back here");
     const reports = reportsJson.map((report) => report["report"]);
@@ -191,6 +191,7 @@ async function getChangedFiles(
   client: any,
   debugMode: boolean
 ): Promise<ChangedFile[]> {
+  core.info("getChangedFiles");
   const response = await client.rest.repos.compareCommits({
     base,
     head,
@@ -199,6 +200,7 @@ async function getChangedFiles(
   });
 
   const changedFiles: ChangedFile[] = [];
+  core.info("getChangedFiles response"+ response);
   for (const file of response.data.files) {
     if (debugMode) core.info(`file: ${debug(file)}`);
     const changedFile: ChangedFile = {
