@@ -130,7 +130,7 @@ function action() {
             const changedFiles = yield getChangedFiles(base, head, client, debugMode);
             if (debugMode)
                 core.info(`changedFiles: ${(0, util_1.debug)(changedFiles)}`);
-            core.info("Getting changed files");
+            core.info("Getting changed files DONE");
             const reportsJson = yield reportsJsonAsync;
             core.info("Did we come back here");
             const reports = reportsJson.map((report) => report["report"]);
@@ -183,6 +183,7 @@ function getJsonReports(xmlPaths, debugMode) {
 }
 function getChangedFiles(base, head, client, debugMode) {
     return __awaiter(this, void 0, void 0, function* () {
+        core.info("getChangedFiles");
         const response = yield client.rest.repos.compareCommits({
             base,
             head,
@@ -190,6 +191,7 @@ function getChangedFiles(base, head, client, debugMode) {
             repo: github.context.repo.repo,
         });
         const changedFiles = [];
+        core.info("getChangedFiles response" + response);
         for (const file of response.data.files) {
             if (debugMode)
                 core.info(`file: ${(0, util_1.debug)(file)}`);
