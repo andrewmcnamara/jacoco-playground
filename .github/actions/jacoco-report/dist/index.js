@@ -18689,7 +18689,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.action = void 0;
+exports.action = exports.getIssueNumberFromCommitPullsList = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
@@ -18700,35 +18700,47 @@ const glob = __importStar(__nccwpck_require__(8090));
 const process_1 = __nccwpck_require__(8442);
 const render_1 = __nccwpck_require__(1936);
 const util_1 = __nccwpck_require__(2629);
+function getIssueNumberFromCommitPullsList(octokit, owner, repo, commitSha) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const commitPullsList = yield octokit.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner,
+            repo,
+            commit_sha: commitSha,
+        });
+        return commitPullsList.data.length ? (_a = commitPullsList.data) === null || _a === void 0 ? void 0 : _a[0].number : null;
+    });
+}
+exports.getIssueNumberFromCommitPullsList = getIssueNumberFromCommitPullsList;
 function action() {
     var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
         let continueOnError = true;
         try {
-            const token = core.getInput('token');
+            const token = core.getInput("token");
             if (!token) {
                 core.setFailed("'token' is missing");
                 return;
             }
-            const pathsString = core.getInput('paths');
+            const pathsString = core.getInput("paths");
             if (!pathsString) {
                 core.setFailed("'paths' is missing");
                 return;
             }
-            const reportPaths = pathsString.split(',');
-            const minCoverageOverall = parseFloat(core.getInput('min-coverage-overall'));
-            const minCoverageChangedFiles = parseFloat(core.getInput('min-coverage-changed-files'));
-            const title = core.getInput('title');
-            const updateComment = (0, processors_1.parseBooleans)(core.getInput('update-comment'));
+            const reportPaths = pathsString.split(",");
+            const minCoverageOverall = parseFloat(core.getInput("min-coverage-overall"));
+            const minCoverageChangedFiles = parseFloat(core.getInput("min-coverage-changed-files"));
+            const title = core.getInput("title");
+            const updateComment = (0, processors_1.parseBooleans)(core.getInput("update-comment"));
             if (updateComment) {
                 if (!title) {
                     core.info("'title' is not set. 'update-comment' does not work without 'title'");
                 }
             }
-            const skipIfNoChanges = (0, processors_1.parseBooleans)(core.getInput('skip-if-no-changes'));
-            const passEmoji = core.getInput('pass-emoji');
-            const failEmoji = core.getInput('fail-emoji');
-            continueOnError = (0, processors_1.parseBooleans)(core.getInput('continue-on-error'));
+            const skipIfNoChanges = (0, processors_1.parseBooleans)(core.getInput("skip-if-no-changes"));
+            const passEmoji = core.getInput("pass-emoji");
+            const failEmoji = core.getInput("fail-emoji");
+            continueOnError = (0, processors_1.parseBooleans)(core.getInput("continue-on-error"));
             const debugMode = true;
             //  parseBooleans(core.getInput('debug-mode'))
             const event = github.context.eventName;
@@ -18737,19 +18749,24 @@ function action() {
                 core.info(`passEmoji: ${passEmoji}`);
                 core.info(`failEmoji: ${failEmoji}`);
             }
+            core.info("Getting client");
+            const client = github.getOctokit(token);
             let base;
             let head;
             let prNumber;
             switch (event) {
-                case 'pull_request':
-                case 'pull_request_target':
+                case "pull_request":
+                case "pull_request_target":
                     base = (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.base.sha;
                     head = (_b = github.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha;
                     prNumber = (_c = github.context.payload.pull_request) === null || _c === void 0 ? void 0 : _c.number;
                     break;
-                case 'push':
+                case "push":
                     base = github.context.payload.before;
                     head = github.context.payload.after;
+                    core.info("GETTING PR NUMBER");
+                    prNumber = yield getIssueNumberFromCommitPullsList(client, github.context.payload.repo.owner, github.context.payload.repo.repo, github.context.sha);
+                    core.info("PR NUMBER: " + prNumber);
                     break;
                 default:
                     core.setFailed(`Only pull requests and pushes are supported, ${github.context.eventName} not supported.`);
@@ -18757,26 +18774,24 @@ function action() {
             }
             core.info(`base sha: ${base}`);
             core.info(`head sha: ${head}`);
-            core.info('Getting client');
-            const client = github.getOctokit(token);
             if (debugMode)
                 core.info(`reportPaths: ${reportPaths}`);
-            core.info('Getting reports');
+            core.info("Getting reports");
             const reportsJsonAsync = getJsonReports(reportPaths, debugMode);
-            core.info('Getting changed files');
+            core.info("Getting changed files");
             const changedFiles = yield getChangedFiles(base, head, client, debugMode);
             if (debugMode)
                 core.info(`changedFiles: ${(0, util_1.debug)(changedFiles)}`);
-            core.info('Getting changed files');
+            core.info("Getting changed files");
             const reportsJson = yield reportsJsonAsync;
-            core.info('Did we come back here');
-            const reports = reportsJson.map(report => report['report']);
-            core.info('Getting project coverage');
+            core.info("Did we come back here");
+            const reports = reportsJson.map((report) => report["report"]);
+            core.info("Getting project coverage");
             const project = (0, process_1.getProjectCoverage)(reports, changedFiles);
             if (debugMode)
                 core.info(`project: ${(0, util_1.debug)(project)}`);
-            core.setOutput('coverage-overall', parseFloat(((_d = project.overall.percentage) !== null && _d !== void 0 ? _d : 0).toFixed(2)));
-            core.setOutput('coverage-changed-files', parseFloat(project['coverage-changed-files'].toFixed(2)));
+            core.setOutput("coverage-overall", parseFloat(((_d = project.overall.percentage) !== null && _d !== void 0 ? _d : 0).toFixed(2)));
+            core.setOutput("coverage-changed-files", parseFloat(project["coverage-changed-files"].toFixed(2)));
             const skip = skipIfNoChanges && project.modules.length === 0;
             if (debugMode)
                 core.info(`skip: ${skip}`);
@@ -18808,12 +18823,12 @@ function action() {
 exports.action = action;
 function getJsonReports(xmlPaths, debugMode) {
     return __awaiter(this, void 0, void 0, function* () {
-        const globber = yield glob.create(xmlPaths.join('\n'));
+        const globber = yield glob.create(xmlPaths.join("\n"));
         const files = yield globber.glob();
         if (debugMode)
             core.info(`Resolved files: ${files}`);
         return Promise.all(files.map((path) => __awaiter(this, void 0, void 0, function* () {
-            const reportXml = yield fs.promises.readFile(path.trim(), 'utf-8');
+            const reportXml = yield fs.promises.readFile(path.trim(), "utf-8");
             return yield xml2js_1.default.parseStringPromise(reportXml);
         })));
     });
@@ -18851,7 +18866,7 @@ function addComment(prNumber, update, title, body, client, debugMode) {
             core.info(`JaCoCo Comment: ${body}`);
         if (update && title) {
             if (debugMode)
-                core.info('Listing all comments');
+                core.info("Listing all comments");
             const comments = yield client.rest.issues.listComments(Object.assign({ issue_number: prNumber }, github.context.repo));
             const comment = comments.data.find((it) => it.body.startsWith(title));
             if (comment) {
@@ -18863,7 +18878,7 @@ function addComment(prNumber, update, title, body, client, debugMode) {
         }
         if (!commentUpdated) {
             if (debugMode)
-                core.info('Creating a new comment');
+                core.info("Creating a new comment");
             yield client.rest.issues.createComment(Object.assign({ issue_number: prNumber, body }, github.context.repo));
         }
     });
