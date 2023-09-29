@@ -1,5 +1,7 @@
 package com.madrapps.jacoco
 
+import kotlin.math.PI
+
 class Arithmetic {
 
     fun add(a: Int, b: Int): Int {
@@ -24,5 +26,13 @@ class Arithmetic {
 
     fun area(a: Int, b: Int): Int {
         return a * b
+    }
+
+    fun circumference(r: Int): Double {
+        return PI * r * r
+    }
+
+    fun circumferenceNew(r: Int): Double {
+        return PI * r * r
     }
 }
