@@ -183,22 +183,27 @@ function getJsonReports(xmlPaths, debugMode) {
 }
 function getChangedFiles(base, head, client, debugMode) {
     return __awaiter(this, void 0, void 0, function* () {
-        const response = yield client.rest.repos.compareCommits({
-            base,
-            head,
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-        });
         const changedFiles = [];
-        for (const file of response.data.files) {
-            if (debugMode)
-                core.info(`file: ${(0, util_1.debug)(file)}`);
-            const changedFile = {
-                filePath: file.filename,
-                url: file.blob_url,
-                lines: (0, util_1.getChangedLines)(file.patch),
-            };
-            changedFiles.push(changedFile);
+        try {
+            const response = yield client.rest.repos.compareCommits({
+                base,
+                head,
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+            });
+            for (const file of response.data.files) {
+                if (debugMode)
+                    core.info(`file: ${(0, util_1.debug)(file)}`);
+                const changedFile = {
+                    filePath: file.filename,
+                    url: file.blob_url,
+                    lines: (0, util_1.getChangedLines)(file.patch),
+                };
+                changedFiles.push(changedFile);
+            }
+        }
+        catch (e) {
+            core.info(`Unable to compare commits between ${base} and ${head}: ${e}`);
         }
         return changedFiles;
     });
