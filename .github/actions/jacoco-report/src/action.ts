@@ -90,10 +90,12 @@ export async function action(): Promise<void> {
         base = github.context.payload.before;
         head = github.context.payload.after;
         core.info("GETTING PR NUMBER");
+        core.info(JSON.stringify(github.context.payload, null, 2));
+        core.info(JSON.stringify(github.context, null, 2));
         prNumber = await getIssueNumberFromCommitPullsList(
           client,
-          github.context.payload.repo.owner,
-          github.context.payload.repo.repo,
+          github.context.repo.owner,
+          github.context.repo.repo,
           github.context.sha
         );
         core.info("PR NUMBER: " + prNumber);
