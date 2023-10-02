@@ -204,13 +204,22 @@ async function getChangedFiles(
     let baseCommit = base;
 
     if (base == "0000000000000000000000000000000000000000") {
-      baseCommit = defaultBranch;
+      core.info("Getting commit from branch ${defaultBranch}");
+      const response = await client.rest.repos.getBranch({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        branch: defaultBranch,
+      });
+      core.info(response.data);
+      baseCommit = response.data?.commit?.sha
+      core.info("Got it ${baseCommit}");
     }
 
     core.info(`Base is ${baseCommit}`);
 
     const response = await client.rest.repos.compareCommits({
-      basehead: `${baseCommit}...${head}`,
+      base: baseCommit,
+      head,
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
     });

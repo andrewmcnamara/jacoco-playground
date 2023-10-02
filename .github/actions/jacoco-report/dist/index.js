@@ -18836,16 +18836,26 @@ function getJsonReports(xmlPaths, debugMode) {
     });
 }
 function getChangedFiles(defaultBranch, base, head, client, debugMode) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const changedFiles = [];
         try {
             let baseCommit = base;
             if (base == "0000000000000000000000000000000000000000") {
-                baseCommit = defaultBranch;
+                core.info("Getting commit from branch ${defaultBranch}");
+                const response = yield client.rest.repos.getBranch({
+                    owner: github.context.repo.owner,
+                    repo: github.context.repo.repo,
+                    branch: defaultBranch,
+                });
+                core.info(response.data);
+                baseCommit = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.commit) === null || _b === void 0 ? void 0 : _b.sha;
+                core.info("Got it ${baseCommit}");
             }
             core.info(`Base is ${baseCommit}`);
             const response = yield client.rest.repos.compareCommits({
-                basehead: `${baseCommit}...${head}`,
+                base: baseCommit,
+                head,
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
             });
