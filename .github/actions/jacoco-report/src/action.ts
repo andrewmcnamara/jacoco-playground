@@ -114,7 +114,13 @@ export async function action(): Promise<void> {
     core.info("Getting reports");
     const reportsJsonAsync = getJsonReports(reportPaths, debugMode);
     core.info("Getting changed files");
-    const changedFiles = await getChangedFiles(base, head, client, debugMode);
+    const changedFiles = await getChangedFiles(
+      github.context.payload?.repository?.default_branch,
+      base,
+      head,
+      client,
+      debugMode
+    );
     if (debugMode) core.info(`changedFiles: ${debug(changedFiles)}`);
     core.info("Getting changed files");
     const reportsJson = await reportsJsonAsync;
@@ -186,28 +192,42 @@ async function getJsonReports(
 }
 
 async function getChangedFiles(
+  defaultBranch: string,
   base: string,
   head: string,
   client: any,
   debugMode: boolean
 ): Promise<ChangedFile[]> {
-  const response = await client.rest.repos.compareCommits({
-    base,
-    head,
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
-  });
-
   const changedFiles: ChangedFile[] = [];
-  for (const file of response.data.files) {
-    if (debugMode) core.info(`file: ${debug(file)}`);
-    const changedFile: ChangedFile = {
-      filePath: file.filename,
-      url: file.blob_url,
-      lines: getChangedLines(file.patch),
-    };
-    changedFiles.push(changedFile);
+
+  try {
+    let baseCommit = base;
+
+    if (base == "0000000000000000000000000000000000000000") {
+      baseCommit = defaultBranch;
+    }
+
+    core.info(`Base is ${baseCommit}`);
+
+    const response = await client.rest.repos.compareCommits({
+      basehead: `${baseCommit}...${head}`,
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+    });
+
+    for (const file of response.data.files) {
+      if (debugMode) core.info(`file: ${debug(file)}`);
+      const changedFile: ChangedFile = {
+        filePath: file.filename,
+        url: file.blob_url,
+        lines: getChangedLines(file.patch),
+      };
+      changedFiles.push(changedFile);
+    }
+  } catch (e) {
+    core.info(`Unable to compare commits between ${base} and ${head}: ${e}`);
   }
+
   return changedFiles;
 }
 
