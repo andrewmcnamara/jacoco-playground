@@ -114,7 +114,13 @@ export async function action(): Promise<void> {
     core.info("Getting reports");
     const reportsJsonAsync = getJsonReports(reportPaths, debugMode);
     core.info("Getting changed files");
-    const changedFiles = await getChangedFiles(base, head, client, debugMode);
+    const changedFiles = await getChangedFiles(
+      github.context.payload?.repository?.default_branch,
+      base,
+      head,
+      client,
+      debugMode
+    );
     if (debugMode) core.info(`changedFiles: ${debug(changedFiles)}`);
     core.info("Getting changed files");
     const reportsJson = await reportsJsonAsync;
@@ -186,17 +192,25 @@ async function getJsonReports(
 }
 
 async function getChangedFiles(
+  defaultBranch: string,
   base: string,
   head: string,
   client: any,
   debugMode: boolean
 ): Promise<ChangedFile[]> {
   const changedFiles: ChangedFile[] = [];
-  
+
   try {
+    let baseCommit = base;
+
+    if (base == "0000000000000000000000000000000000000000") {
+      baseCommit = defaultBranch;
+    }
+
+    core.info(`Base is ${baseCommit}`);
+
     const response = await client.rest.repos.compareCommits({
-      base,
-      head,
+      basehead: `${baseCommit}...${head}`,
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
     });

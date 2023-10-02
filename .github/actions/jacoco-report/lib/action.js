@@ -59,7 +59,7 @@ function getIssueNumberFromCommitPullsList(octokit, owner, repo, commitSha) {
 }
 exports.getIssueNumberFromCommitPullsList = getIssueNumberFromCommitPullsList;
 function action() {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e, _f;
     return __awaiter(this, void 0, void 0, function* () {
         let continueOnError = true;
         try {
@@ -127,7 +127,7 @@ function action() {
             core.info("Getting reports");
             const reportsJsonAsync = getJsonReports(reportPaths, debugMode);
             core.info("Getting changed files");
-            const changedFiles = yield getChangedFiles(base, head, client, debugMode);
+            const changedFiles = yield getChangedFiles((_e = (_d = github.context.payload) === null || _d === void 0 ? void 0 : _d.repository) === null || _e === void 0 ? void 0 : _e.default_branch, base, head, client, debugMode);
             if (debugMode)
                 core.info(`changedFiles: ${(0, util_1.debug)(changedFiles)}`);
             core.info("Getting changed files");
@@ -138,7 +138,7 @@ function action() {
             const project = (0, process_1.getProjectCoverage)(reports, changedFiles);
             if (debugMode)
                 core.info(`project: ${(0, util_1.debug)(project)}`);
-            core.setOutput("coverage-overall", parseFloat(((_d = project.overall.percentage) !== null && _d !== void 0 ? _d : 0).toFixed(2)));
+            core.setOutput("coverage-overall", parseFloat(((_f = project.overall.percentage) !== null && _f !== void 0 ? _f : 0).toFixed(2)));
             core.setOutput("coverage-changed-files", parseFloat(project["coverage-changed-files"].toFixed(2)));
             const skip = skipIfNoChanges && project.modules.length === 0;
             if (debugMode)
@@ -181,13 +181,17 @@ function getJsonReports(xmlPaths, debugMode) {
         })));
     });
 }
-function getChangedFiles(base, head, client, debugMode) {
+function getChangedFiles(defaultBranch, base, head, client, debugMode) {
     return __awaiter(this, void 0, void 0, function* () {
         const changedFiles = [];
         try {
+            let baseCommit = base;
+            if (base == "0000000000000000000000000000000000000000") {
+                baseCommit = defaultBranch;
+            }
+            core.info(`Base is ${baseCommit}`);
             const response = yield client.rest.repos.compareCommits({
-                base,
-                head,
+                basehead: `${baseCommit}...${head}`,
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
             });
